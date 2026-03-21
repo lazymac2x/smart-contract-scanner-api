@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Smart Contract Scanner API
+  description: |
+    Premium Solidity smart contract vulnerability scanner. Detects 13 vulnerability
+    classes using pattern-based analysis. No external dependencies required.
+
+    ## Features
+    - Full security audit with risk scoring (0-100)
+    - Quick scan for critical vulnerabilities only
+    - Gas optimization analysis
+    - Detailed findings with line numbers, severity, and fix recommendations
+    - SWC Registry references for each finding
+  version: 1.0.0
+  contact:
+    name: lazymac2x
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:5200
+    description: Local development
+
+paths:
+  /api/v1/scan:
+    post:
+      summary: Full contract scan
+      description: Comprehensive vulnerability analysis detecting all 13 vulnerability classes. Returns a full audit report with risk score, grouped findings, gas optimization suggestions, and recommendations.
+      operationId: fullScan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+            example:
+              code: |
+                pragma solidity ^0.8.0;
+                contract Example {
+                    function withdraw() public {
+                        msg.sender.call{value: address(this).balance}("");
+                    }
+                }
+      responses:
+        '200':
+          description: Scan completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '400':
+          description: Invalid request (missing code field)
+        '413':
+          description: Contract too large (>500KB)
+        '500':
+          description: Internal scanner error
+
+  /api/v1/quick-scan:
+    post:
+      summary: Quick scan (critical checks only)
+      description: Fast scan checking only the top 5 critical vulnerability patterns — reentrancy, access control, tx.origin, delegatecall, and unchecked calls.
+      operationId: quickScan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Quick scan completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '400':
+          description: Invalid request
+
+  /api/v1/gas-analysis:
+    post:
+      summary: Gas optimization analysis
+      description: Analyzes Solidity code for gas optimization opportunities with estimated savings per suggestion.
+      operationId: gasAnalysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Gas analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GasResponse'
+        '400':
+          description: Invalid request
+
+  /api/v1/vulnerabilities:
+    get:
+      summary: List detectable vulnerabilities
+      description: Returns all 13 vulnerability types the scanner can detect, with severity and SWC references.
+      operationId: listVulnerabilities
+      responses:
+        '200':
+          description: Vulnerability catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VulnerabilityCatalog'
+
+components:
+  schemas:
+    ScanRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: Solidity smart contract source code
+
+    ScanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        report:
+          type: object
+          properties:
+            overview:
+              type: object
+              properties:
+                riskScore:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                riskLevel:
+                  type: string
+                  enum: [Critical, High, Medium, Low, Safe]
+                summary:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                    critical:
+                      type: integer
+                    high:
+                      type: integer
+                    medium:
+                      type: integer
+                    low:
+                      type: integer
+                    info:
+                      type: integer
+            findings:
+              type: object
+              properties:
+                bySeverity:
+                  type: object
+                total:
+                  type: integer
+            gasOptimization:
+              type: object
+              properties:
+                suggestions:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GasSuggestion'
+            recommendations:
+              type: array
+              items:
+                type: object
+
+    GasResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        gasOptimization:
+          type: object
+          properties:
+            suggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/GasSuggestion'
+            totalSuggestions:
+              type: integer
+
+    GasSuggestion:
+      type: object
+      properties:
+        line:
+          type: integer
+        category:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        estimatedSaving:
+          type: string
+
+    VulnerabilityCatalog:
+      type: object
+      properties:
+        success:
+          type: boolean
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              severity:
+                type: string
+              description:
+                type: string
+              swcReference:
+                type: string
+        totalDetectors:
+          type: integer

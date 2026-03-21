@@ -1,0 +1,29 @@
+{
+  "name": "smart-contract-scanner-api",
+  "version": "1.0.0",
+  "description": "Premium Solidity smart contract vulnerability scanner REST API & MCP server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "mcp": "node src/mcp-server.js",
+    "test": "node tests/test.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [
+    "solidity",
+    "smart-contract",
+    "security",
+    "audit",
+    "vulnerability-scanner",
+    "defi",
+    "blockchain",
+    "ethereum",
+    "mcp"
+  ],
+  "author": "lazymac2x",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  }
+}
